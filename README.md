@@ -187,6 +187,11 @@ Configure the following in your hosting provider dashboards:
 
 ---
 
+## Project Documentation
+*   [Case Study](case_study.md) — Problem, technical approach, results, and architecture lessons learned.
+*   [Changelog](CHANGELOG.md) — Version release logs and features trace.
+*   [Contributing Guidelines](CONTRIBUTING.md) — Code style guides and pull request policies.
+
 ## Author
 
 **Chandru S**
@@ -194,3 +199,6 @@ Configure the following in your hosting provider dashboards:
 - Portfolio: https://chan-tech5.github.io/Portfolio/
 - GitHub: https://github.com/chan-tech5
 - LinkedIn: https://www.linkedin.com/in/chandru-s5
+
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
