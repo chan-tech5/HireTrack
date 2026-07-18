@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { signIn } from "next-auth/react";
 
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth.schema";
 import { Button } from "@/components/ui/button";
@@ -39,13 +40,25 @@ export function RegisterForm() {
       toast.error(result.error);
       return;
     }
-    if (result?.warning) {
-      toast.warning(result.warning);
+
+    toast.success("Account created! Logging you in...");
+
+    // Client-side authentication to bypass server-side redirect issues
+    const loginResult = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+
+    if (loginResult?.error) {
+      toast.error("Auto sign-in failed. Please login manually.");
       router.push("/login");
       return;
     }
-    toast.success("Account created! Welcome to HireTrack.");
+
+    toast.success("Welcome to HireTrack!");
     router.push("/dashboard");
+    router.refresh();
   }
 
   return (
