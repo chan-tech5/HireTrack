@@ -187,5 +187,10 @@ Configure the following in your hosting provider dashboards:
 
 ---
 
-## License
-Distributed under the MIT License. See `LICENSE` for more information.
+## Author
+
+**Chandru S**
+
+- Portfolio: https://chan-tech5.github.io/Portfolio/
+- GitHub: https://github.com/chan-tech5
+- LinkedIn: https://www.linkedin.com/in/chandru-s5
