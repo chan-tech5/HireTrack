@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth.schema";
 import { slugify } from "@/lib/utils/format";
 import { signIn } from "@/lib/auth/config";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export async function register(input: RegisterInput) {
   const parsed = registerSchema.safeParse(input);
@@ -45,7 +46,19 @@ export async function register(input: RegisterInput) {
   });
 
   // Auto sign-in after registration
-  await signIn("credentials", { email, password, redirect: false });
+  try {
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: "/dashboard",
+    });
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+    console.error("Auto sign-in failed:", error);
+    return { success: true, warning: "Account created! Please sign in manually." };
+  }
 
   return { success: true };
 }

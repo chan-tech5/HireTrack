@@ -39,6 +39,11 @@ export function RegisterForm() {
       toast.error(result.error);
       return;
     }
+    if (result?.warning) {
+      toast.warning(result.warning);
+      router.push("/login");
+      return;
+    }
     toast.success("Account created! Welcome to HireTrack.");
     router.push("/dashboard");
   }
