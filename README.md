@@ -8,6 +8,8 @@
 
 ![Hero Screenshot](docs/hero_screenshot.png)
 
+🔗 **Live Demo:** [https://hiretrack-zeta.vercel.app](https://hiretrack-zeta.vercel.app)
+
 ## Overview
 HireTrack is a modern Applicant Tracking System (ATS) built with Next.js, TypeScript, Prisma, PostgreSQL, and NextAuth. It streamlines recruitment by providing candidate management, interview scheduling, analytics dashboards, and role-based collaboration.
 
