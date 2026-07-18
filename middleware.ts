@@ -7,7 +7,7 @@ const { auth } = NextAuth(authConfig);
 
 // ─── Route Groups ─────────────────────────────────────────────────────────────
 
-const PUBLIC_ROUTES = ["/login", "/register", "/api/auth", "/api/db-push"];
+const PUBLIC_ROUTES = ["/login", "/register", "/api/auth"];
 const AUTH_ROUTES = ["/login", "/register"];
 
 function isPublicRoute(pathname: string): boolean {
