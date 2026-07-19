@@ -15,100 +15,107 @@ import {
 } from "@/lib/validations/candidate.schema";
 import { revalidatePath } from "next/cache";
 
-export async function createCandidate(input: CreateCandidateInput & { jobId: string }) {
-  const session = await requireAuth();
-  if (!hasPermission(session.user.role, "candidate:create")) {
-    return { error: "You don't have permission to create candidates." };
-  }
-
-  const parsed = createCandidateSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-  const { jobId, ...candidateData } = input;
-
-  // Verify email duplicate within candidates
-  const existing = await prisma.candidate.findUnique({
-    where: { email: parsed.data.email },
-  });
-  if (existing) {
-    // If candidate exists, check if they already have an application for this job
-    const appExists = await prisma.application.findFirst({
-      where: { candidateId: existing.id, jobId, deletedAt: null },
-    });
-    if (appExists) {
-      return { error: "This candidate has already applied to this job." };
+export async function createCandidate(input: CreateCandidateInput) {
+  try {
+    const session = await requireAuth();
+    if (!hasPermission(session.user.role, "candidate:create")) {
+      return { error: "You don't have permission to create candidates." };
     }
 
-    // Otherwise, create application for existing candidate
-    const app = await prisma.application.create({
-      data: {
-        candidateId: existing.id,
-        jobId,
-        stage: "APPLIED",
-      },
-    });
+    const parsed = createCandidateSchema.safeParse(input);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-    await prisma.stageHistory.create({
-      data: {
-        applicationId: app.id,
-        toStage: "APPLIED",
-        reason: "Manual addition",
-      },
-    });
+    const { jobId, ...candidateData } = parsed.data;
 
-    await prisma.activityLog.create({
-      data: {
-        action: "added_candidate",
-        entityType: "candidate",
-        entityId: existing.id,
-        userId: session.user.id,
-      },
+    if (!jobId) {
+      return { error: "Please select a job for the candidate." };
+    }
+
+    // Verify email duplicate within candidates
+    const existing = await prisma.candidate.findUnique({
+      where: { email: candidateData.email },
+    });
+    if (existing) {
+      // If candidate exists, check if they already have an application for this job
+      const appExists = await prisma.application.findFirst({
+        where: { candidateId: existing.id, jobId, deletedAt: null },
+      });
+      if (appExists) {
+        return { error: "This candidate has already applied to this job." };
+      }
+
+      // Otherwise, create application for existing candidate
+      const app = await prisma.application.create({
+        data: {
+          candidateId: existing.id,
+          jobId,
+          stage: "APPLIED",
+        },
+      });
+
+      await prisma.stageHistory.create({
+        data: {
+          applicationId: app.id,
+          toStage: "APPLIED",
+          reason: "Manual addition",
+        },
+      });
+
+      await prisma.activityLog.create({
+        data: {
+          action: "added_candidate",
+          entityType: "candidate",
+          entityId: existing.id,
+          userId: session.user.id,
+        },
+      });
+
+      revalidatePath("/candidates");
+      revalidatePath(`/jobs/${jobId}`);
+      return { success: true, candidateId: existing.id };
+    }
+
+    // Create new candidate + application
+    const result = await prisma.$transaction(async (tx) => {
+      const candidate = await tx.candidate.create({
+        data: candidateData,
+      });
+
+      const app = await tx.application.create({
+        data: {
+          candidateId: candidate.id,
+          jobId,
+          stage: "APPLIED",
+        },
+      });
+
+      await tx.stageHistory.create({
+        data: {
+          applicationId: app.id,
+          toStage: "APPLIED",
+          reason: "Manual creation",
+        },
+      });
+
+      await tx.activityLog.create({
+        data: {
+          action: "added_candidate",
+          entityType: "candidate",
+          entityId: candidate.id,
+          userId: session.user.id,
+        },
+      });
+
+      return candidate;
     });
 
     revalidatePath("/candidates");
     revalidatePath(`/jobs/${jobId}`);
-    return { success: true, candidateId: existing.id };
+    return { success: true, candidateId: result.id };
+  } catch (error: any) {
+    console.error("createCandidate error:", error);
+    return { error: error.message || "Failed to create candidate." };
   }
-
-  // Create new candidate + application
-  const result = await prisma.$transaction(async (tx) => {
-    const candidate = await tx.candidate.create({
-      data: {
-        ...parsed.data,
-      },
-    });
-
-    const app = await tx.application.create({
-      data: {
-        candidateId: candidate.id,
-        jobId,
-        stage: "APPLIED",
-      },
-    });
-
-    await tx.stageHistory.create({
-      data: {
-        applicationId: app.id,
-        toStage: "APPLIED",
-        reason: "Manual creation",
-      },
-    });
-
-    await tx.activityLog.create({
-      data: {
-        action: "added_candidate",
-        entityType: "candidate",
-        entityId: candidate.id,
-        userId: session.user.id,
-      },
-    });
-
-    return candidate;
-  });
-
-  revalidatePath("/candidates");
-  revalidatePath(`/jobs/${jobId}`);
-  return { success: true, candidateId: result.id };
 }
 
 export async function updateCandidate(id: string, input: UpdateCandidateInput) {
