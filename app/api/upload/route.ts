@@ -1,7 +1,4 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
 
 export async function POST(request: Request) {
   try {
@@ -12,28 +9,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Save path inside public/uploads
-    const uploadDir = join(process.cwd(), "public", "uploads");
-
-    // Ensure dir exists
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
+    // Validate size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "File size exceeds 5MB limit" }, { status: 400 });
     }
 
-    // Generate unique name to prevent collisions
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}.${fileExt}`;
-    const filePath = join(uploadDir, fileName);
+    // Validate file type
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Only PDF and DOCX files are allowed" }, { status: 400 });
+    }
 
-    await writeFile(filePath, buffer);
-
-    const url = `/uploads/${fileName}`;
+    // Convert to base64 data URL (works on Vercel serverless — no filesystem needed)
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString("base64");
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
     return NextResponse.json({
-      url,
+      url: dataUrl,
       fileName: file.name,
     });
   } catch (error: any) {
@@ -41,5 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
   }
 }
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+

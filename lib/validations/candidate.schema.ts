@@ -12,11 +12,12 @@ export const createCandidateSchema = z.object({
   skills: z.array(z.string()).default([]),
   source: z.string().optional(),
   tags: z.array(z.string()).default([]),
-  resumeUrl: z.string().url().optional().or(z.literal("")),
+  resumeUrl: z.string().optional().or(z.literal("")),
   resumeFileName: z.string().optional(),
   linkedinUrl: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
   portfolioUrl: z.string().url("Invalid portfolio URL").optional().or(z.literal("")),
   notes: z.string().optional(),
+  jobId: z.string().optional(),
 });
 
 export const updateCandidateSchema = createCandidateSchema.partial();
