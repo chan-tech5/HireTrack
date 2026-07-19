@@ -7,11 +7,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  // Prioritize Vercel/Supabase URLs over local DATABASE_URL
+  // Pick the first non-empty connection string
   const connectionString =
+    process.env.DATABASE_URL ||
     process.env.POSTGRES_PRISMA_URL ||
     process.env.POSTGRES_URL ||
-    process.env.DATABASE_URL;
+    "";
 
   if (!connectionString) {
     throw new Error("No database connection URL found. Set DATABASE_URL, POSTGRES_PRISMA_URL, or POSTGRES_URL.");
